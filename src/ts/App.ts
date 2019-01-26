@@ -1,10 +1,14 @@
 import './webglUtils';
-import {setMainRenderFunction} from "./helpers/requestRenderFrame";
 import {Inject} from "./helpers/InjectDectorator";
-import {WebglRender} from "./render/WebglRender";
-import {CanvasRender} from "./render/CanvasRender";
 import {State} from "./State";
 import {Io} from "./Io";
+import {BackgroundLayer} from "./views/BackgroundLayer";
+import {BulletsLayer} from "./views/BulletsLayer";
+import {clamp} from "./helpers/clamp";
+import {distance} from "./helpers/distance";
+import {EffectsLayer} from "./views/EffectsLayer";
+import {Render} from "./render/Render";
+import {UiLayer} from "./views/UiLayer";
 
 declare global {
     interface Window {
@@ -13,19 +17,19 @@ declare global {
 }
 
 class App {
-    @Inject(WebglRender) private webglRender: WebglRender;
-    @Inject(CanvasRender) private canvasRender: CanvasRender;
+    @Inject(Render) private render: Render;
     @Inject(State) private state: State;
     @Inject(Io) private io: Io;
 
     constructor() {
-        this.canvasRender.prepare();
-        this.webglRender.prepare();
+        const background = new BackgroundLayer();
+        const bullets = new BulletsLayer();
+        const effects = new EffectsLayer();
+        const ui = new UiLayer();
 
-        setMainRenderFunction(() => {
-            this.canvasRender.draw();
-            this.webglRender.draw();
-        });
+        this.render.init([
+            background, bullets, effects, ui
+        ]);
 
         const velocity = 15;
 
@@ -58,10 +62,56 @@ class App {
 
                setTimeout(() => {
                    this.state.bullets.delete(bullet);
-               }, 2000);
+               }, 200);
            }
 
            this.state.bullets.forEach(bullet => bullet.y -= 10 * Math.floor(Math.random() * 10));
+
+           if (this.state.enemies.size < 10) {
+               this.state.enemies.add({
+                   x: clamp((Math.random() * 500) | 0, 20, 480),
+                   y: -(Math.random() * 500) | 0
+               });
+           }
+
+           this.state.enemies.forEach(enemy => {
+               enemy.y += 8;
+
+               if (enemy.y > 510) {
+                   this.state.enemies.delete(enemy);
+               }
+
+               this.state.bullets.forEach(bullet => {
+                   if (distance(enemy.x, enemy.y, bullet.x, bullet.y) < 14) {
+                       this.state.enemies.delete(enemy);
+
+                       const effect = {
+                           ...enemy,
+                           size: 5
+                       };
+
+                       this.state.effects.add(effect);
+
+                       setTimeout(() => {
+                           this.state.effects.delete(effect);
+                       }, 500);
+
+                       this.state.points++;
+                   }
+               });
+
+               if (distance(enemy.x, enemy.y, this.state.heroX, this.state.heroY) < 14) {
+                   this.state.damaged = true;
+
+                   setTimeout(() => {
+                       this.state.damaged = false;
+                   }, 300);
+               }
+           });
+
+           this.state.effects.forEach(effect => {
+               effect.size += 5;
+           });
 
         }, 50);
     }

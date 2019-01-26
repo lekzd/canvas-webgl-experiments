@@ -1,11 +1,10 @@
 import {Inject} from "../helpers/InjectDectorator";
 import {WebGlCtx} from "../views/WeglCtx";
 import {State} from "../State";
-import {OffscreenCtx} from "../views/OffscreenCtx";
-import {BulletsCtx} from "../views/BulletsCtx";
 
 import * as vertexShader from "../../glsl/vertex.vert";
 import * as fragmentShader from "../../glsl/fragment.frag";
+import {Layer} from "../views/Layer";
 
 type IGlTexture = {
     location: WebGLUniformLocation;
@@ -15,8 +14,6 @@ type IGlTexture = {
 
 export class WebglRender {
 
-    @Inject(OffscreenCtx) private offscreenCtx: CanvasRenderingContext2D;
-    @Inject(BulletsCtx) private bulletsCtx: CanvasRenderingContext2D;
     @Inject(WebGlCtx) private gl: WebGLRenderingContext;
     @Inject(State) private state: State;
 
@@ -24,6 +21,11 @@ export class WebglRender {
     private positionBuffer: WebGLBuffer;
     private texcoordBuffer: WebGLBuffer;
     private textures = new Set<IGlTexture>();
+    private layers: Layer[] = [];
+
+    add(layer: Layer) {
+        this.layers.push(layer);
+    }
 
     prepare() {
         this.program = window.webglUtils.createProgramFromSources(this.gl, [vertexShader, fragmentShader]);// Tell it to use our program (pair of shaders)
@@ -33,7 +35,7 @@ export class WebglRender {
         this.positionBuffer = this.gl.createBuffer();
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
         this.bindArrayBuffer("a_position", this.positionBuffer);
-        this.setRectangle(0, 0, this.offscreenCtx.canvas.width, this.offscreenCtx.canvas.height);
+        this.setRectangle(0, 0, 500, 500);
 
         // provide texture coordinates for the rectangle.
         this.texcoordBuffer = this.gl.createBuffer();
@@ -45,17 +47,21 @@ export class WebglRender {
         this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
 
         // Clear the canvas
-        this.gl.clearColor(0, 0, 0, 0);
+        this.gl.clearColor(0, 0, 0, 1);
+        this.gl.colorMask(true, true, true, true);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
+        this.gl.pixelStorei(this.gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
+
         // Create a texture.
-        this.addTexture('u_image', this.offscreenCtx.canvas);
-        this.addTexture('u_bulletsImage', this.bulletsCtx.canvas);
+        this.layers.forEach(layer => {
+            this.addTexture(layer.shaderTextureName, layer.ctx.canvas);
+        });
 
         // set the resolution
         this.setVecValue('u_resolution', 2, this.gl.canvas.width, this.gl.canvas.height);
         // set the size of the image
-        this.setVecValue('u_textureSize', 2, this.offscreenCtx.canvas.width, this.offscreenCtx.canvas.height);
+        this.setVecValue('u_textureSize', 2, 500, 500);
 
         [...this.textures].forEach(({location, texture, canvas}, index) => {
             this.gl.uniform1i(location, index);
@@ -69,6 +75,9 @@ export class WebglRender {
 
         this.setVecValue('u_mousePos', 3, this.state.x, this.state.y, this.state.impulse);
         this.setVecValue('u_backgroundTop', 1, this.state.top);
+        this.setVecValue('u_damaged', 1, Number(this.state.damaged));
+        this.setVecValue('u_effectsSize', 1, this.state.effects.size);
+        this.setVecValue('u_time', 1, performance.now());
 
         [...this.textures].forEach(({location, texture, canvas}, index) => {
             this.gl.activeTexture(this.gl[`TEXTURE${index}`]);
