@@ -73,7 +73,6 @@ export class WebglRender {
             return;
         }
 
-        this.setVecValue('u_mousePos', 3, this.state.x, this.state.y, this.state.impulse);
         this.setVecValue('u_backgroundTop', 1, this.state.top);
         this.setVecValue('u_damaged', 1, Number(this.state.damaged));
         this.setVecValue('u_effectsSize', 1, this.state.effects.size);

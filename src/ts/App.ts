@@ -62,10 +62,10 @@ class App {
 
                setTimeout(() => {
                    this.state.bullets.delete(bullet);
-               }, 200);
+               }, 400);
            }
 
-           this.state.bullets.forEach(bullet => bullet.y -= 10 * Math.floor(Math.random() * 10));
+           this.state.bullets.forEach(bullet => bullet.y -= 5 * Math.floor(Math.random() * 10));
 
            if (this.state.enemies.size < 10) {
                this.state.enemies.add({

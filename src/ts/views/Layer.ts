@@ -8,7 +8,7 @@ export abstract class Layer {
     constructor() {
         this.ctx = this.makeCtx(500, 500);
 
-        document.querySelector('#display').appendChild(this.ctx.canvas);
+        document.querySelector('#debug').appendChild(this.ctx.canvas);
     }
 
     get shaderTextureName(): string {
@@ -18,7 +18,7 @@ export abstract class Layer {
     abstract prepare(ctx: CanvasRenderingContext2D);
     abstract draw(ctx: CanvasRenderingContext2D);
 
-    private makeCtx(width: number, height: number): CanvasRenderingContext2D {
+    protected makeCtx(width: number, height: number): CanvasRenderingContext2D {
         const canvas = document.createElement('canvas');
         canvas.width = width;
         canvas.height = height;

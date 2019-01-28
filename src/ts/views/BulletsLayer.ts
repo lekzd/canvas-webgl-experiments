@@ -8,8 +8,12 @@ export class BulletsLayer extends Layer {
 
     name = 'bullets';
 
-    prepare(ctx) {
+    private startCtx: CanvasRenderingContext2D;
 
+    prepare(ctx) {
+        this.startCtx = this.makeCtx(26, 26);
+
+        this.drawStar(13, 13, 5, 13, 3, this.startCtx);
     }
 
     draw(ctx) {
@@ -27,12 +31,38 @@ export class BulletsLayer extends Layer {
         ctx.fillRect(this.state.heroX - 2, this.state.heroY - 8, 4, 16);
         ctx.fillRect(this.state.heroX - 8, this.state.heroY, 16, 4);
 
-
-        ctx.fillStyle = '#f42d0d';
         this.state.enemies.forEach(enemy => {
-            ctx.fillRect(enemy.x - 12, enemy.y - 16, 8, 16);
-            ctx.fillRect(enemy.x - 4, enemy.y - 8, 8, 16);
-            ctx.fillRect(enemy.x + 4, enemy.y - 16, 8, 16);
+            ctx.drawImage(this.startCtx.canvas, enemy.x - 13, enemy.y - 13);
         });
+    }
+
+    private drawStar(cx,cy,spikes,outerRadius,innerRadius, ctx){
+        let rot = Math.PI / 2*3;
+        let x = cx;
+        let y = cy;
+        let step = Math.PI / spikes;
+
+        ctx.beginPath();
+        ctx.moveTo(cx,cy - outerRadius);
+
+        for(let i = 0; i < spikes; i++){
+            x = cx + Math.cos(rot) * outerRadius;
+            y= cy + Math.sin(rot) * outerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+
+            x = cx + Math.cos(rot) * innerRadius;
+            y = cy + Math.sin(rot) * innerRadius;
+            ctx.lineTo(x, y);
+            rot += step;
+        }
+
+        ctx.lineTo(cx, cy - outerRadius);
+        ctx.closePath();
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#f42d0d';
+        ctx.stroke();
+        ctx.fillStyle = '#f42d0d';
+        ctx.fill();
     }
 }

@@ -11,7 +11,6 @@ uniform float u_damaged;
 uniform float u_effectsSize;
 uniform float u_time;
 uniform vec2 u_textureSize;
-uniform vec3 u_mousePos;
 
 // the texCoords passed in from the vertex shader.
 varying vec2 v_texCoord;
@@ -81,6 +80,7 @@ float cnoise(vec2 P)
   vec2 fade_xy = fade(Pf.xy);
   vec2 n_x = mix(vec2(n00, n01), vec2(n10, n11), fade_xy.x);
   float n_xy = mix(n_x.x, n_x.y, fade_xy.y);
+
   return 2.3 * n_xy;
 }
 
